@@ -1,6 +1,6 @@
 #include "config_store.h"
 
-void macro_config_defaults(macro_config_t *config);
+#include <stddef.h>
 
 config_store_status_t config_store_load(macro_config_t *config)
 {
