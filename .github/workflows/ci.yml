@@ -1,0 +1,24 @@
+name: core-tests
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  host-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Install build tools
+        run: sudo apt-get update && sudo apt-get install -y cmake gcc
+      - name: Configure host test build
+        run: cmake -S . -B build-host -DBUILD_HOST_TESTS=ON
+      - name: Build core modules and tests
+        run: cmake --build build-host --parallel
+      - name: Run tests
+        run: ctest --test-dir build-host --output-on-failure
