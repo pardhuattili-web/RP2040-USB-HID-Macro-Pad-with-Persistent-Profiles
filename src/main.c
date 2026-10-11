@@ -1,4 +1,5 @@
 #include <stdbool.h>
+#include <stddef.h>
 #include <stdint.h>
 
 #include "pico/stdlib.h"
@@ -10,7 +11,7 @@
 #include "macro_engine.h"
 
 #define BUTTON_DEBOUNCE_MS 25U
-#define REPORT_POLL_MS 2U
+#define REPORT_INTERVAL_MS 2U
 
 static const uint8_t button_gpio[MACRO_PAD_BUTTON_COUNT] = {2U, 3U, 4U, 5U, 6U, 7U};
 static button_state_t button_states[MACRO_PAD_BUTTON_COUNT];
@@ -22,6 +23,7 @@ static void hid_key_callback(uint8_t modifiers, uint8_t keycode, bool pressed, v
     if (!tud_hid_ready()) {
         return;
     }
+
     uint8_t keycodes[6] = {0U};
     if (pressed) {
         keycodes[0] = keycode;
@@ -32,16 +34,16 @@ static void hid_key_callback(uint8_t modifiers, uint8_t keycode, bool pressed, v
 static bool hid_text_callback(char character, void *context)
 {
     (void)context;
-    /* Deliberately conservative US-layout ASCII mapping for a demonstrator. */
     uint8_t keycode = 0U;
     uint8_t modifier = 0U;
+
     if (character >= 'a' && character <= 'z') {
-        keycode = (uint8_t)(0x04U + (character - 'a'));
+        keycode = (uint8_t)(0x04U + (uint8_t)(character - 'a'));
     } else if (character >= 'A' && character <= 'Z') {
-        keycode = (uint8_t)(0x04U + (character - 'A'));
+        keycode = (uint8_t)(0x04U + (uint8_t)(character - 'A'));
         modifier = 0x02U;
     } else if (character >= '1' && character <= '9') {
-        keycode = (uint8_t)(0x1EU + (character - '1'));
+        keycode = (uint8_t)(0x1EU + (uint8_t)(character - '1'));
     } else if (character == '0') {
         keycode = 0x27U;
     } else if (character == ' ') {
@@ -53,9 +55,9 @@ static bool hid_text_callback(char character, void *context)
     }
 
     hid_key_callback(modifier, keycode, true, NULL);
-    sleep_ms(REPORT_POLL_MS);
+    sleep_ms(REPORT_INTERVAL_MS);
     hid_key_callback(0U, 0U, false, NULL);
-    sleep_ms(REPORT_POLL_MS);
+    sleep_ms(REPORT_INTERVAL_MS);
     return true;
 }
 
@@ -82,6 +84,14 @@ uint16_t tud_hid_get_report_cb(uint8_t instance, uint8_t report_id, hid_report_t
 
 void tud_mount_cb(void) {}
 void tud_umount_cb(void) {}
+
+uint8_t const desc_hid_report[] = {TUD_HID_REPORT_DESC_KEYBOARD()};
+
+uint8_t const *tud_hid_descriptor_report_cb(uint8_t instance)
+{
+    (void)instance;
+    return desc_hid_report;
+}
 
 int main(void)
 {
@@ -118,14 +128,4 @@ int main(void)
 
         sleep_ms(1U);
     }
-}
-
-uint8_t const desc_hid_report[] = {
-    TUD_HID_REPORT_DESC_KEYBOARD()
-};
-
-uint8_t const *tud_hid_descriptor_report_cb(uint8_t instance)
-{
-    (void)instance;
-    return desc_hid_report;
 }
