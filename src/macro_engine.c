@@ -1,6 +1,7 @@
 #include "macro_engine.h"
 #include "crc32.h"
 
+#include <stddef.h>
 #include <string.h>
 
 #define CONFIG_SCHEMA_VERSION 1U
@@ -84,6 +85,9 @@ bool macro_config_validate(const macro_config_t *config)
             }
             if (memchr(action->label, '\0', sizeof(action->label)) == NULL ||
                 memchr(action->text, '\0', sizeof(action->text)) == NULL) {
+                return false;
+            }
+            if (action->type == MACRO_ACTION_KEY_COMBO && action->keycode == 0U) {
                 return false;
             }
         }
