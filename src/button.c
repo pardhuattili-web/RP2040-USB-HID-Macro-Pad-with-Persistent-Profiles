@@ -1,5 +1,7 @@
 #include "button.h"
 
+#include <stddef.h>
+
 void button_state_init(button_state_t *state, uint32_t debounce_ms)
 {
     if (state == NULL) {
