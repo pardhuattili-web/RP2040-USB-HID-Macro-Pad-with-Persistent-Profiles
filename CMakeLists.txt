@@ -1,11 +1,12 @@
 cmake_minimum_required(VERSION 3.13)
 
-option(BUILD_HOST_TESTS "Build host-side unit tests without the Pico SDK" OFF)
+option(BUILD_HOST_TESTS "Build portable unit tests without the Pico SDK" OFF)
 
 if(BUILD_HOST_TESTS)
     project(rp2040_macro_pad_host_tests C)
     set(CMAKE_C_STANDARD 11)
     set(CMAKE_C_STANDARD_REQUIRED ON)
+    set(CMAKE_C_EXTENSIONS OFF)
     enable_testing()
 
     add_executable(test_core
@@ -27,6 +28,7 @@ include(pico_sdk_import.cmake)
 project(rp2040_usb_hid_macro_pad C CXX ASM)
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
+set(CMAKE_C_EXTENSIONS OFF)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
@@ -46,12 +48,6 @@ target_link_libraries(macro_pad
     hardware_gpio
     tinyusb_device
     tinyusb_board
-)
-
-target_compile_definitions(macro_pad PRIVATE
-    PICO_DEFAULT_UART=0
-    PICO_DEFAULT_UART_TX_PIN=0
-    PICO_DEFAULT_UART_RX_PIN=1
 )
 
 pico_enable_stdio_usb(macro_pad 0)
