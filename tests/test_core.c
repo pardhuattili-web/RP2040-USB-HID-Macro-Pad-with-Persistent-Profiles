@@ -42,6 +42,7 @@ static void test_crc32(void)
 {
     const char *text = "123456789";
     assert(crc32_compute(text, strlen(text)) == 0xCBF43926u);
+    assert(crc32_compute(NULL, 0U) == 0u);
 }
 
 static void test_debounce(void)
@@ -52,9 +53,12 @@ static void test_debounce(void)
     assert(!button_state_update(&state, true, 119U));
     assert(button_state_update(&state, true, 120U));
     assert(!button_state_update(&state, true, 121U));
+
     assert(!button_state_update(&state, false, 130U));
     assert(!button_state_update(&state, false, 149U));
     assert(!button_state_update(&state, false, 150U));
+    assert(!state.stable_pressed);
+    assert(!button_state_update(&state, false, 151U));
 }
 
 static void test_config_validation(void)
@@ -69,6 +73,8 @@ static void test_config_validation(void)
     macro_config_defaults(&config);
     config.profiles[0].actions[0].keycode ^= 1U;
     assert(!macro_config_validate(&config));
+
+    assert(!macro_config_validate(NULL));
 }
 
 static void test_macro_dispatch(void)
@@ -89,6 +95,8 @@ static void test_macro_dispatch(void)
     char output[64] = {0};
     assert(macro_execute_action(&text_action, NULL, consume_char, output));
     assert(strcmp(output, "abc") == 0);
+    assert(!macro_execute_action(&text_action, NULL, NULL, NULL));
+    assert(!macro_execute_action(NULL, capture_key, consume_char, &capture));
 }
 
 static void test_store_defaults_safe(void)
@@ -97,6 +105,7 @@ static void test_store_defaults_safe(void)
     assert(config_store_load(&config) == CONFIG_STORE_UNAVAILABLE);
     assert(macro_config_validate(&config));
     assert(config_store_save(&config) == CONFIG_STORE_UNAVAILABLE);
+    assert(config_store_load(NULL) == CONFIG_STORE_INVALID);
 }
 
 int main(void)
