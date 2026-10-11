@@ -39,9 +39,9 @@ void macro_config_defaults(macro_config_t *config);
 bool macro_config_validate(const macro_config_t *config);
 uint32_t macro_config_crc(const macro_config_t *config);
 
-/* Backend-independent report callback used by firmware and unit tests. */
 typedef void (*macro_key_callback_t)(uint8_t modifiers, uint8_t keycode, bool pressed, void *context);
 typedef bool (*macro_text_char_callback_t)(char character, void *context);
+
 bool macro_execute_action(const macro_action_t *action,
                           macro_key_callback_t key_callback,
                           macro_text_char_callback_t text_callback,
