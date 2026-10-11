@@ -11,53 +11,63 @@
 #include "macro_engine.h"
 
 #define BUTTON_DEBOUNCE_MS 25U
-#define REPORT_INTERVAL_MS 2U
 
 static const uint8_t button_gpio[MACRO_PAD_BUTTON_COUNT] = {2U, 3U, 4U, 5U, 6U, 7U};
 static button_state_t button_states[MACRO_PAD_BUTTON_COUNT];
 static macro_config_t app_config;
 
-static void hid_key_callback(uint8_t modifiers, uint8_t keycode, bool pressed, void *context)
+static void send_report(uint8_t modifiers, uint8_t keycode)
 {
-    (void)context;
     if (!tud_hid_ready()) {
         return;
     }
-
     uint8_t keycodes[6] = {0U};
-    if (pressed) {
+    if (keycode != 0U) {
         keycodes[0] = keycode;
     }
     (void)tud_hid_keyboard_report(0U, modifiers, keycodes);
 }
 
-static bool hid_text_callback(char character, void *context)
+static void hid_key_callback(uint8_t modifiers, uint8_t keycode, bool pressed, void *context)
 {
     (void)context;
-    uint8_t keycode = 0U;
-    uint8_t modifier = 0U;
+    send_report(pressed ? modifiers : 0U, pressed ? keycode : 0U);
+}
 
+static bool ascii_to_hid(char character, uint8_t *modifier, uint8_t *keycode)
+{
+    *modifier = 0U;
     if (character >= 'a' && character <= 'z') {
-        keycode = (uint8_t)(0x04U + (uint8_t)(character - 'a'));
+        *keycode = (uint8_t)(0x04U + (uint8_t)(character - 'a'));
     } else if (character >= 'A' && character <= 'Z') {
-        keycode = (uint8_t)(0x04U + (uint8_t)(character - 'A'));
-        modifier = 0x02U;
+        *keycode = (uint8_t)(0x04U + (uint8_t)(character - 'A'));
+        *modifier = 0x02U;
     } else if (character >= '1' && character <= '9') {
-        keycode = (uint8_t)(0x1EU + (uint8_t)(character - '1'));
+        *keycode = (uint8_t)(0x1EU + (uint8_t)(character - '1'));
     } else if (character == '0') {
-        keycode = 0x27U;
+        *keycode = 0x27U;
     } else if (character == ' ') {
-        keycode = 0x2CU;
+        *keycode = 0x2CU;
     } else if (character == '\n') {
-        keycode = 0x28U;
+        *keycode = 0x28U;
     } else {
         return false;
     }
+    return true;
+}
 
-    hid_key_callback(modifier, keycode, true, NULL);
-    sleep_ms(REPORT_INTERVAL_MS);
-    hid_key_callback(0U, 0U, false, NULL);
-    sleep_ms(REPORT_INTERVAL_MS);
+static bool hid_text_callback(char character, void *context)
+{
+    (void)context;
+    uint8_t modifier = 0U;
+    uint8_t keycode = 0U;
+    if (!ascii_to_hid(character, &modifier, &keycode) || !tud_hid_ready()) {
+        return false;
+    }
+    send_report(modifier, keycode);
+    sleep_ms(2U);
+    send_report(0U, 0U);
+    sleep_ms(2U);
     return true;
 }
 
